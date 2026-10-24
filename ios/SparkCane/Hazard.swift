@@ -28,13 +28,25 @@ enum Hazard: String, CaseIterable {
 
     var isAlert: Bool { self != .floor && self != .calibrating }
 
+    /// Higher is more dangerous; matches hazardSeverity() in the firmware.
+    var severity: Int {
+        switch self {
+        case .dip: return 1
+        case .stepUp: return 2
+        case .stepDown: return 3
+        case .obstacle: return 4
+        case .ledge: return 5
+        default: return 0
+        }
+    }
+
     /// How often the alert repeats while the hazard is still ahead.
     var repeatInterval: TimeInterval {
         switch self {
-        case .ledge: return 0.6
-        case .obstacle, .stepDown: return 1.0
-        case .dip, .stepUp: return 1.5
-        default: return 3.0
+        case .ledge: return 1.0
+        case .obstacle, .stepDown: return 1.5
+        case .dip, .stepUp: return 2.5
+        default: return 4.0
         }
     }
 }
