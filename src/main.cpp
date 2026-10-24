@@ -43,12 +43,12 @@ void loop() {
     uint16_t distance, strength;
     if (!readLuna(distance, strength)) return;
 
-    Reading result = filterReading(distance, strength);
-    bool obstacle = isObstacle(distance, strength);
+    Reading   result = filterReading(distance, strength);
+    Detection det    = detectObstacle(distance, strength);
 
     char line[64];
     snprintf(line, sizeof(line), "%8lu ms   %4u cm   %6u   %-9s   %s",
              millis(), distance, strength, readingName(result),
-             obstacle ? "OBSTACLE" : "clear");
+             detectionName(det));
     Serial.println(line);
 }
