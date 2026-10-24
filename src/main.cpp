@@ -3,6 +3,7 @@
 #include "ble_link.h"
 #include "hazard.h"
 #include "lidar.h"
+#include "web_dashboard.h"
 
 const uint32_t SEND_INTERVAL_MS = 250;   // keep the phone's live readout fresh
 const uint32_t PRINT_INTERVAL_MS = 100;
@@ -14,6 +15,7 @@ void setup() {
     Serial.begin(115200);
     beginLidar();
     beginBle();
+    beginDashboard();
     Serial.println("SparkCane started - hold the cane normally over flat ground to calibrate");
 }
 
@@ -22,6 +24,8 @@ void loop() {
     static Hazard lastSent = NO_SIGNAL;
     static uint16_t distanceCm = 0;
     uint32_t now = millis();
+
+    handleDashboard();
 
     if (recalibrateRequested) {
         recalibrateRequested = false;
@@ -39,6 +43,7 @@ void loop() {
         state = &detector.noData(now);
     }
     if (!state) return;
+    updateDashboard(*state, distanceCm);
 
     if (state->hazard != lastSent || now - lastSend >= SEND_INTERVAL_MS) {
         char message[48];

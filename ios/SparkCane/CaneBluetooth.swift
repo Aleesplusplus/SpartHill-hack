@@ -10,6 +10,8 @@ final class CaneBluetooth: NSObject, ObservableObject {
 
     enum Status: String {
         case off = "Bluetooth is off"
+        case unauthorized = "Allow Bluetooth in Settings › Spark Cane"
+        case unsupported = "Bluetooth not available (the Simulator can't use it; run on a real iPhone)"
         case searching = "Searching for cane…"
         case connecting = "Connecting…"
         case connected = "Connected"
@@ -43,10 +45,11 @@ final class CaneBluetooth: NSObject, ObservableObject {
 
 extension CaneBluetooth: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state == .poweredOn {
-            startScan()
-        } else {
-            status = .off
+        switch central.state {
+        case .poweredOn: startScan()
+        case .unauthorized: status = .unauthorized
+        case .unsupported: status = .unsupported
+        default: status = .off
         }
     }
 
