@@ -10,8 +10,13 @@ final class CaneMonitor: ObservableObject {
     @Published var vibrationOn = true { didSet { alerts.vibrationOn = vibrationOn } }
     @Published var speechOn = true { didSet { alerts.speechOn = speechOn } }
 
+    /// Alerts never run closer together than this, unless the danger gets worse.
+    static let minimumAlertGap: TimeInterval = 1.0
+    static let minimumSpeechGap: TimeInterval = 2.5
+
     private var current: Hazard = .floor
     private var lastAlert = Date.distantPast
+    private var lastSpeech = Date.distantPast
 
     init() {
         bluetooth.onReading = { [weak self] reading in self?.handle(reading) }
@@ -22,14 +27,19 @@ final class CaneMonitor: ObservableObject {
     }
 
     private func handle(_ reading: CaneReading) {
-        let changed = reading.hazard != current
-        current = reading.hazard
-        guard reading.hazard.isAlert else { return }
+        let hazard = reading.hazard
+        let changed = hazard != current
+        let worse = hazard.severity > current.severity
+        current = hazard
+        guard hazard.isAlert else { return }
 
         let now = Date()
-        if changed || now.timeIntervalSince(lastAlert) >= reading.hazard.repeatInterval {
-            lastAlert = now
-            alerts.play(reading.hazard, announce: changed)
-        }
+        let gap = changed ? Self.minimumAlertGap : hazard.repeatInterval
+        guard worse || now.timeIntervalSince(lastAlert) >= gap else { return }
+        lastAlert = now
+
+        let announce = changed && (worse || now.timeIntervalSince(lastSpeech) >= Self.minimumSpeechGap)
+        if announce { lastSpeech = now }
+        alerts.play(hazard, announce: announce)
     }
 }
